@@ -11,6 +11,7 @@ use Laravel\Socialite\One\TwitterProvider;
 use Laravel\Socialite\Two\FacebookProvider;
 use Laravel\Socialite\Two\LinkedInProvider;
 use Laravel\Socialite\Two\BitbucketProvider;
+use Laravel\Socialite\Two\LineProvider;
 use League\OAuth1\Client\Server\Twitter as TwitterServer;
 
 class SocialiteManager extends Manager implements Contracts\Factory
@@ -93,6 +94,20 @@ class SocialiteManager extends Manager implements Contracts\Factory
 
         return $this->buildProvider(
           BitbucketProvider::class, $config
+        );
+    }
+
+    /**
+     * Create an instance of the specified driver.
+     *
+     * @return \Laravel\Socialite\Two\AbstractProvider
+     */
+    public function createLineDriver()
+    {
+        $config = $this->app['config']['services.line'];
+
+        return $this->buildProvider(
+            LineProvider::class, $config
         );
     }
 
