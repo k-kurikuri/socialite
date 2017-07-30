@@ -2,12 +2,20 @@
 
 namespace Laravel\Socialite\Two;
 
+use Illuminate\Support\Arr;
+
 /**
  * Class LineProvider
  * @package Laravel\Socialite\Two
  */
 class LineProvider extends AbstractProvider implements ProviderInterface
 {
+    protected $apiUrl = 'https://api.line.me';
+
+    protected $version = 'v2';
+
+    protected $grant_type = 'authorization_code';
+
     /**
      * Get the authentication URL for the provider.
      *
@@ -16,7 +24,7 @@ class LineProvider extends AbstractProvider implements ProviderInterface
      */
     protected function getAuthUrl($state)
     {
-        // TODO: Implement getAuthUrl() method.
+        return $this->buildAuthUrlFromBase('https://access.line.me/dialog/oauth/weblogin', $state);
     }
 
     /**
@@ -26,7 +34,7 @@ class LineProvider extends AbstractProvider implements ProviderInterface
      */
     protected function getTokenUrl()
     {
-        // TODO: Implement getTokenUrl() method.
+        return "{$this->apiUrl}/{$this->version}/oauth/accessToken";
     }
 
     /**
@@ -37,7 +45,15 @@ class LineProvider extends AbstractProvider implements ProviderInterface
      */
     protected function getUserByToken($token)
     {
-        // TODO: Implement getUserByToken() method.
+        $profileUrl = "{$this->apiUrl}/{$this->version}/profile";
+
+        $response = $this->getHttpClient()->get($profileUrl, [
+            'headers' => [
+                'Authorization' => "Bearer {$token}",
+            ],
+        ]);
+
+        return json_decode($response->getBody(), true);
     }
 
     /**
@@ -48,6 +64,37 @@ class LineProvider extends AbstractProvider implements ProviderInterface
      */
     protected function mapUserToObject(array $user)
     {
-        // TODO: Implement mapUserToObject() method.
+        return (new User)->setRaw($user)->map([
+            'id' => $user['userId'],
+            'nickname' => null,
+            'name' => $user['displayName'],
+            'email' => null,
+            'avatar' => $user['pictureUrl'],
+            'avatar_original' => null,
+            'profileUrl' => null,
+        ]);
+    }
+
+    protected function getTokenFields($code)
+    {
+        $tokenFields = parent::getTokenFields($code);
+        $tokenFields['grant_type'] = $this->grant_type;
+
+        return $tokenFields;
+    }
+
+    protected function getCodeFields($state = null)
+    {
+        $fields = [
+            'client_id' => $this->clientId,
+            'redirect_uri' => $this->redirectUrl,
+            'response_type' => 'code',
+        ];
+
+        if ($this->usesState()) {
+            $fields['state'] = $state;
+        }
+
+        return $fields;
     }
 }
